@@ -1,0 +1,11 @@
+- name: install nginx
+  yum: name={{ pkg_name }} state=installed
+- name: stop httpd
+  service: name=httpd state=stopped
+- name: Start httpd
+  service: name=httpd state=started
+- name: copy the index file
+  copy: src=index.html dest=/var/www/html/index.html
+  notify:
+       - Restarthttpd
+       - portcheck

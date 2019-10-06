@@ -1,0 +1,4 @@
+- name: Restarthttpd
+  service: name=httpd state=restarted
+- name: portcheck
+  wait_for: host=10.128.0.6 port=80 timeout=5
