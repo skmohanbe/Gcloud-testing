@@ -1,0 +1,14 @@
+---
+ - hosts: all
+   become: true
+   gather_facts: no
+   tasks:
+              - name: Unmounting if it mounted
+                mount:
+                     name: "/{{ item.mount }}"
+                     src: "/dev/mapper/EfibVg-{{ item.volume }}"
+                     fstype: ext4 
+                     state: mounted
+                with_items:
+                     - { mount: bases_aquilat, volume: bases_aquilat }
+                     - { mount: bases_aquilat_1, volume: bases_aquilat_1 }

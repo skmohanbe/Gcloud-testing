@@ -1,0 +1,9 @@
+---
+ - hosts: all
+   become: true
+   gather_facts: no
+   tasks:
+              - name: Unmounting if it mounted
+                mount: name=/bases_aquilat src=/dev/mapper/EfibVg-bases_aquilat fstype=ext4 state=present
+              - name: lv remove
+                lvol: lv=bases_aquilat_1 vg=EfibVg force=yes state=absent

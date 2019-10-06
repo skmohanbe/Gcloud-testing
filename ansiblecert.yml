@@ -1,0 +1,51 @@
+---
+ - hosts: all
+   become: true
+   gather_facts: no
+   tasks:
+              - name: Unmounting if it mounted
+                mount: name=/bases_aquilat src=/dev/mapper/EfibVg-bases_aquilat fstype=ext4 state=absent
+              - name: lv remove
+                lvol: lv=bases_aquilat_1 vg=EfibVg force=yes state=absent
+#              - name: vgremove
+#                lvg: vg=EfibVg pvs={{ diskname }} state=absent
+              - name: Disk Validation
+                shell: size=`fdisk -l {{ diskname }} | egrep '^Disk /dev/' | awk '{print $5}'`; if [ -z $size ];then echo "no";else echo "$size";fi
+                register: disksize_st
+                ignore_errors: True
+
+#              - debug:
+#                    msg: "{{ disksize_st.stdout }} value"
+#                    var: disksize_st
+              - name: Exit when disk not found
+                fail: msg="No such disk found"
+                when: disksize_st.stdout == "no"
+
+              - name: Physical Volume & VG creation
+                lvg: vg=EfibVg pvs={{ diskname }} pesize=32
+                when: disksize_st.stdout != "no"
+
+              - block:
+                - name: Volume create
+                  lvol: vg=EfibVg lv=bases_aquilat_1 size={{ reqValue }} 
+                rescue:
+                    - debug:
+                        msg: "The disk have less space"
+                    - name: Volume create < 1G
+                      lvol: vg=EfibVg lv=bases_aquilat_1 size=300
+                always:
+                    - name:  Create FS
+                      filesystem: fstype=ext4 dev=/dev/mapper/EfibVg-bases_aquilat_1
+                    - name: mount
+                      mount: name=/bases_aquilat src=/dev/mapper/EfibVg-bases_aquilat_1 fstype=ext4 opts=rw,noatime,noexec,nodev,nosuid state=mounted
+                    - debug:
+                        msg: "Volume created successfully"
+   vars:
+        reqValue: "{{ ((disksize_st.stdout|int / 1024 /1024 | int) - 800 ) | int }}"
+
+   environment:
+        PATH: "/usr/sbin/:/sbin/:/usr/bin/:/bin/"
+   vars_prompt:
+     - name: diskname
+       prompt: "What is the disk name : "
+       private: no

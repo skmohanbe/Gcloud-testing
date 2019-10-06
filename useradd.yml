@@ -1,0 +1,13 @@
+---
+ - hosts: all
+   gather_facts: no
+   become: yes
+   tasks:
+         - name: Group addition
+           group: name=admin gid=1010 state=present
+         - name: create user
+           user: name=intadm uid=60000 shell=/bin/bash group=admin ssh_key_file=.ssh/id_rsa.pub home=/home/intadm create_home=True comment="Admin user for puppet" expires=-1
+         - name: Create Directory 
+           file: path=/home/intadm/.ssh state=directory mode=0755 group=admin owner=intadm 
+         - name: Copy the sshkey
+           copy: src=.ssh/id_rsa.pub dest=/home/intadm/.ssh/autherzied_keys owner=intadm group=admin mode=0600 
